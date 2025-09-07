@@ -1,0 +1,14 @@
+POST / HTTP/1.1
+Host: localhost:8080
+Content-Type: text/plain
+
+https://practicum.yandex.ru/
+
+
+###
+GET /a6499d HTTP/1.1
+Host: localhost:8080
+Content-Type: text/plain
+
+
+###
