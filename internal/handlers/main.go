@@ -51,6 +51,6 @@ func (h *Handler) GetOriginalLink(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Original link by this ID not found", http.StatusBadRequest)
 		return
 	}
-	
+
 	http.Redirect(w, r, original, http.StatusTemporaryRedirect)
 }
