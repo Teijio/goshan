@@ -9,6 +9,7 @@ import (
 
 	"github.com/Teijio/goshan/internal/repository"
 	"github.com/Teijio/goshan/internal/service"
+	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -99,10 +100,9 @@ func TestGetOriginalLink(t *testing.T) {
 		expectedHeader string
 	}{
 		{
-			name:         "Empty ID",
-			path:         "/",
-			statusCode:   http.StatusBadRequest,
-			expectedBody: "id can't be empty\n",
+			name:       "Empty ID",
+			path:       "/",
+			statusCode: http.StatusMethodNotAllowed,
 		},
 		{
 			name:         "Non-existent ID",
@@ -126,9 +126,15 @@ func TestGetOriginalLink(t *testing.T) {
 				tt.path = "/" + short
 			}
 
+			r := chi.NewRouter()
+			r.Post("/", h.CreateShortenLink)
+			r.Get("/{id}", h.GetOriginalLink)
+
 			req := httptest.NewRequest(http.MethodGet, tt.path, nil)
 			w := httptest.NewRecorder()
-			h.GetOriginalLink(w, req)
+
+			r.ServeHTTP(w, req)
+
 			result := w.Result()
 			defer result.Body.Close()
 			bodyBytes, err := io.ReadAll(result.Body)
@@ -149,12 +155,17 @@ func TestGetOriginalLink(t *testing.T) {
 	}
 }
 
-func TestGetOriginalLink_Integration(t *testing.T) {
+func TestGetOriginalLinkIntegration(t *testing.T) {
 	h := setupHandler()
-	originalURL := "https://practicum.yandex.ru/profile/go-developer/"
+
+	r := chi.NewRouter()
+	r.Post("/", h.CreateShortenLink)
+	r.Get("/{id}", h.GetOriginalLink)
+
+	originalURL := "https://practicum.yandex.ru/"
 	createReq := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(originalURL))
 	createW := httptest.NewRecorder()
-	h.CreateShortenLink(createW, createReq)
+	r.ServeHTTP(createW, createReq)
 
 	createResult := createW.Result()
 	defer createResult.Body.Close()
@@ -168,7 +179,7 @@ func TestGetOriginalLink_Integration(t *testing.T) {
 
 	getReq := httptest.NewRequest(http.MethodGet, "/"+shortID, nil)
 	getW := httptest.NewRecorder()
-	h.GetOriginalLink(getW, getReq)
+	r.ServeHTTP(getW, getReq)
 
 	getResult := getW.Result()
 	defer getResult.Body.Close()

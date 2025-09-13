@@ -5,13 +5,15 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/Teijio/goshan/internal/service"
+	"github.com/go-chi/chi/v5"
 )
 
 type Handler struct {
 	urlService *service.URLService
-	baseURL string
+	baseURL    string
 }
 
 func NewHandler(svc *service.URLService, baseURL string) *Handler {
@@ -40,12 +42,7 @@ func (h *Handler) CreateShortenLink(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetOriginalLink(w http.ResponseWriter, r *http.Request) {
-	id := r.URL.Path[1:]
-	if id == "" {
-		http.Error(w, "id can't be empty", http.StatusBadRequest)
-		return
-	}
-
+	id := strings.ToLower(chi.URLParam(r, "id"))
 	original, ok := h.urlService.GetOriginalLink(id)
 	if !ok {
 		http.Error(w, "Original link by this ID not found", http.StatusBadRequest)
