@@ -11,9 +11,14 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+// SERVER_ADDRESS
+// BASE_URL
+
 func main() {
 	cfg := config.LoadConfig()
+	
 	log.Printf("Starting server on %s (base URL: %s)", cfg.ServerAddress, cfg.BaseURL)
+
 	rep := repository.NewURLRepository()
 	service := service.NewURLService(rep)
 	h := handlers.NewHandler(service, cfg.BaseURL)
