@@ -13,7 +13,7 @@ import (
 )
 
 var sugar *zap.SugaredLogger
-gorka
+
 func main() {
     logger, err := zap.NewDevelopment()
     if err != nil {
