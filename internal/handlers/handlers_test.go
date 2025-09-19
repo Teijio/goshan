@@ -12,12 +12,23 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"go.uber.org/zap/zaptest"
 )
+
+func NewTestLogger(t *testing.T) *zap.Logger {
+	return zaptest.NewLogger(t, zaptest.Level(zapcore.DebugLevel))
+}
+
+func NewNullLogger() *zap.Logger {
+	return zap.NewNop()
+}
 
 func setupHandler() *Handler {
 	repo := repository.NewURLRepository()
 	svc := service.NewURLService(repo)
-	return NewHandler(svc, "http://localhost:8080")
+	return NewHandler(svc, "http://localhost:8080", NewNullLogger())
 }
 
 type MockReader struct{}

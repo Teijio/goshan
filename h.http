@@ -12,3 +12,11 @@ Content-Type: text/plain
 
 
 ###
+
+POST /api/shorten HTTP/1.1
+Host: localhost:8080
+Content-Type: application/json
+
+{
+  "url": "https://practicum.yandex.ru"
+}
