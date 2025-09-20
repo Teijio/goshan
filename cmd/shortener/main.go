@@ -12,30 +12,29 @@ import (
 	"go.uber.org/zap"
 )
 
-var sugar *zap.SugaredLogger
-
 func main() {
-    logger, err := zap.NewDevelopment()
-    if err != nil {
-        panic(err)
-    }
-    defer logger.Sync()
-	sugar = logger.Sugar()
-
+	logger, err := zap.NewDevelopment()
+	if err != nil {
+		panic(err)
+	}
+	defer logger.Sync()
 	cfg := config.LoadConfig()
-
 
 	rep := repository.NewURLRepository()
 	service := service.NewURLService(rep)
-	h := handlers.NewHandler(service, cfg.BaseURL)
+	h := handlers.NewHandler(service, cfg.BaseURL, logger)
 
 	r := chi.NewRouter()
-	r.Use(middleware.LoggingMiddleware(sugar))
 
+	r.Use(middleware.LoggingMiddleware(logger))
 	r.Route("/", func(r chi.Router) {
 		r.Post("/", h.CreateShortenLink)
-		r.Get("/{id}", h.GetOriginalLink )
+		r.Get("/{id}", h.GetOriginalLink)
 	})
-
-	sugar.Fatal(http.ListenAndServe(cfg.ServerAddress, r))
+	r.Route("/api", func(r chi.Router) {
+		r.Post("/shorten", h.CreateShortenLinkV2)
+	})
+	if err := http.ListenAndServe(cfg.ServerAddress, r); err != nil {
+		logger.Fatal("Server failed to start", zap.Error(err))
+	}
 }

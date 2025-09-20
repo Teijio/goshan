@@ -32,22 +32,21 @@ func (lrw *loggingResponseWriter) Write(b []byte) (int, error) {
 	return size, err
 }
 
-func LoggingMiddleware(logger *zap.SugaredLogger) func(http.Handler) http.Handler {
+func LoggingMiddleware(logger *zap.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
 
 			lrw := newLoggingResponseWriter(w)
 			next.ServeHTTP(lrw, r)
-
 			duration := time.Since(start)
 
-			logger.Infow("HTTP request",
-				"method", r.Method,
-				"uri", r.RequestURI,
-				"status", lrw.statusCode,
-				"size", lrw.responseSize,
-				"duration", duration.String(),
+			logger.Info("HTTP request completed",
+				zap.String("method", r.Method),
+				zap.String("uri", r.RequestURI),
+				zap.Int("status", lrw.statusCode),
+				zap.Int("size", lrw.responseSize),
+				zap.Duration("duration", duration),
 			)
 		})
 	}
