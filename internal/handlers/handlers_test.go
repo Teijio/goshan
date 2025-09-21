@@ -1,12 +1,15 @@
 package handlers
 
 import (
+	"bytes"
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
+	"github.com/Teijio/goshan/internal/models"
 	"github.com/Teijio/goshan/internal/repository"
 	"github.com/Teijio/goshan/internal/service"
 	"github.com/go-chi/chi/v5"
@@ -36,6 +39,7 @@ type MockReader struct{}
 func (m *MockReader) Read(p []byte) (n int, err error) {
 	return 0, io.ErrUnexpectedEOF
 }
+
 func TestCreateShortenLink(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -197,4 +201,48 @@ func TestGetOriginalLinkIntegration(t *testing.T) {
 
 	assert.Equal(t, http.StatusTemporaryRedirect, getResult.StatusCode)
 	assert.Equal(t, originalURL, getResult.Header.Get("Location"))
+}
+
+func TestCreateShortenLinkV2(t *testing.T) {
+	tests := []struct {
+		name         string
+		requestBody  any
+		expectedBody string
+		expectedStatus int
+	}{
+		{
+			name:           "Created success",
+			requestBody:    models.Request{URL: "https://example.com"},
+			expectedBody:   `{"result":"http://localhost:8080/abc123"}`,
+			expectedStatus: http.StatusCreated,
+		},
+		{
+			name:           "Invalid URL in body",
+			requestBody:    models.Request{URL: "example.com"},
+			expectedBody:   "invalid URL: parse \"example.com\": invalid URI for request\n",
+			expectedStatus: http.StatusBadRequest,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			body, err := json.Marshal(tt.requestBody)
+			if err != nil {
+				t.Fatalf("failed to marshal body: %v", err)
+			}
+
+			req := httptest.NewRequest(http.MethodPost, "/api/shorten", bytes.NewReader(body))
+			w := httptest.NewRecorder()
+
+			h := setupHandler()
+			h.CreateShortenLinkV2(w, req)
+
+			resp := w.Result()
+			defer resp.Body.Close()
+
+			if resp.StatusCode != tt.expectedStatus {
+				t.Errorf("expected status %d, got %d", tt.expectedStatus, resp.StatusCode)
+			}
+
+		})
+	}
 }
