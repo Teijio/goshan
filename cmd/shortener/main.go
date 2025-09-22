@@ -26,7 +26,7 @@ func main() {
 
 	r := chi.NewRouter()
 
-	r.Use(middleware.LoggingMiddleware(logger))
+	r.Use(middleware.LoggingMiddleware(logger), middleware.ResponseCompressor, middleware.RequestDecompressor)
 	r.Route("/", func(r chi.Router) {
 		r.Post("/", h.CreateShortenLink)
 		r.Get("/{id}", h.GetOriginalLink)

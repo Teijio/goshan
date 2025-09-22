@@ -46,6 +46,7 @@ func (h *Handler) CreateShortenLink(w http.ResponseWriter, r *http.Request) {
 	short := h.urlService.Shorten(original)
 	shortURL := fmt.Sprintf("%s/%s", h.baseURL, short)
 
+	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusCreated)
 	fmt.Fprint(w, shortURL)
 }

@@ -1,6 +1,7 @@
 POST / HTTP/1.1
 Host: localhost:8080
 Content-Type: text/plain
+Accept-Encoding: gzip
 
 https://practicum.yandex.ru/
 
@@ -10,13 +11,23 @@ GET /a6499d HTTP/1.1
 Host: localhost:8080
 Content-Type: text/plain
 
-
 ###
 
 POST /api/shorten HTTP/1.1
 Host: localhost:8080
 Content-Type: application/json
+Accept-Encoding: gzip
+
 
 {
   "url": "https://practicum.yandex.ru"
 }
+
+###
+
+POST / HTTP/1.1
+Host: localhost:8080
+Accept-Encoding: gzip
+Content-Encoding: gzip
+Content-Type: text/plain
+User-Agent: go-resty/2.7.0 (https://github.com/go-resty/resty)
