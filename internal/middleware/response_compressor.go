@@ -21,8 +21,8 @@ func newCompressWriter(w http.ResponseWriter) *compressWriter {
 	}
 }
 
-func (c *compressWriter) Header() http.Header {
-	return c.ResponseWriter.Header()
+func (cw *compressWriter) Header() http.Header {
+	return cw.ResponseWriter.Header()
 }
 
 func (cw *compressWriter) Write(p []byte) (int, error) {
@@ -37,7 +37,6 @@ func canCompress(contentType string) bool {
 }
 
 func (cw *compressWriter) WriteHeader(statusCode int) {
-	fmt.Println(statusCode)
 	if statusCode < 300 {
 		contentType := cw.Header().Get("Content-Type")
 		if canCompress(contentType) {
