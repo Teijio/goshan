@@ -8,22 +8,27 @@ import (
 )
 
 type URLService struct {
-	repo *repository.URLRepository
+	repo repository.Repository
 }
 
-func NewURLService(repo *repository.URLRepository) *URLService {
+func NewURLService(repo repository.Repository) *URLService {
 	return &URLService{
 		repo: repo,
 	}
 }
 
-func (s *URLService) Shorten(original string) string {
+func (s *URLService) Shorten(original string) (string, error) {
 	short := fmt.Sprintf("%x", sha1.Sum([]byte(original)))[:6]
-	s.repo.Save(short, original)
-	return short
+	if err := s.repo.Save(short, original); err != nil {
+		return "", err
+	}
+	return short, nil
 }
 
-func (s *URLService) GetOriginalLink(shorten string) (string, bool) {
-	original, ok := s.repo.Get(shorten)
-	return original, ok
+func (s *URLService) GetOriginalLink(shorten string) (string, error) {
+	original, err := s.repo.Get(shorten)
+	if err != nil {
+		return "", err
+	}
+	return original, nil
 }

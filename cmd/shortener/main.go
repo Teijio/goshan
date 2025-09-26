@@ -20,7 +20,10 @@ func main() {
 	defer logger.Sync()
 	cfg := config.LoadConfig()
 
-	rep := repository.NewURLRepository()
+	rep, err := repository.GetRepository(cfg)
+	if err != nil {
+		logger.Fatal("Failed to initialize repository: %v", zap.Error(err))
+	}
 	service := service.NewURLService(rep)
 	h := handlers.NewHandler(service, cfg.BaseURL, logger)
 
