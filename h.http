@@ -3,7 +3,7 @@ Host: localhost:8080
 Content-Type: text/plain
 Accept-Encoding: gzip
 
-https://practicum.yandex.ru/
+https://practicum.yandex.ru/111
 
 
 ###
@@ -20,7 +20,7 @@ Accept-Encoding: gzip
 
 
 {
-  "url": "https://practicum.yandex.ru"
+  "url": "https://practicum.yandex.ru222"
 }
 
 ###
