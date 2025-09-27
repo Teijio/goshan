@@ -2,7 +2,6 @@ package repository
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/Teijio/goshan/internal/config"
 )
@@ -10,18 +9,26 @@ import (
 type Repository interface {
 	Save(short, original string) error
 	Get(short string) (string, error)
+	Check() error
 }
 
-func GetRepository(cfg *config.Config) (Repository, error) {
+func GetRepository(cfg *config.Config) Repository {
 	if filepath := cfg.FilePath; filepath != "" {
 		repo, err := NewFileRepository(filepath)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create file repository: %w", err)
+			panic(err)
 		}
-		return repo, nil
+		return repo
 	}
-	return NewURLRepository(), nil
-}
+	if db_dsn := cfg.DatabaseDSN; db_dsn != "" {
+		repo, err := NewPostgresRepository(db_dsn)
+		if err != nil {
+			panic(err)
+		}
+		return repo
+	}
 
+	return NewInMemoreRepository()
+}
 
 var ErrShortURLNotFound = errors.New("short URL not found")
