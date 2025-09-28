@@ -20,8 +20,8 @@ func GetRepository(cfg *config.Config) Repository {
 		}
 		return repo
 	}
-	if db_dsn := cfg.DatabaseDSN; db_dsn != "" {
-		repo, err := NewPostgresRepository(db_dsn)
+	if dbDsn := cfg.DatabaseDSN; dbDsn != "" {
+		repo, err := NewPostgresRepository(dbDsn)
 		if err != nil {
 			panic(err)
 		}

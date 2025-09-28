@@ -12,13 +12,13 @@ type PostgresRepository struct {
 	conn *pgx.Conn
 }
 
-func NewPostgresRepository(db_dsn string) (*PostgresRepository, error) {
-	conn, err := pgx.Connect(context.Background(), db_dsn)
+func NewPostgresRepository(dbDsn string) (*PostgresRepository, error) {
+	conn, err := pgx.Connect(context.Background(), dbDsn)
 	if err != nil {
 		return nil, err
 	}
 	return &PostgresRepository{
-		dsn:  db_dsn,
+		dsn:  dbDsn,
 		conn: conn,
 	}, nil
 }
