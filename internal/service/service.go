@@ -32,3 +32,10 @@ func (s *URLService) GetOriginalLink(shorten string) (string, error) {
 	}
 	return original, nil
 }
+
+func (s *URLService) HealthCheck() error {
+	if err := s.repo.Check(); err != nil {
+		return err
+	}
+	return nil
+}

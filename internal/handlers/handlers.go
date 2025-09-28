@@ -8,11 +8,26 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/Teijio/goshan/internal/config"
+	"github.com/Teijio/goshan/internal/middleware"
 	"github.com/Teijio/goshan/internal/models"
 	"github.com/Teijio/goshan/internal/service"
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 )
+
+func NewRouter(service *service.URLService, cfg *config.Config, logger *zap.Logger) chi.Router {
+	h := NewHandler(service, cfg.BaseURL, logger)
+	r := chi.NewRouter()
+	r.Use(middleware.LoggingMiddleware(logger), middleware.ResponseCompressor, middleware.RequestDecompressor)
+	r.Route("/", func(r chi.Router) {
+		r.Post("/", h.CreateShortenLink)
+		r.Get("/{id}", h.GetOriginalLink)
+		r.Post("/api/shorten", h.CreateShortenLinkV2)
+		r.Get("/ping", h.Ping)
+	})
+	return r
+}
 
 type Handler struct {
 	urlService *service.URLService
@@ -98,6 +113,17 @@ func (h *Handler) CreateShortenLinkV2(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		h.logger.Error("Error encoding response", zap.Error(err))
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
 	}
 
+}
+
+func (h *Handler) Ping(w http.ResponseWriter, r *http.Request) {
+	if err := h.urlService.HealthCheck(); err != nil {
+		h.logger.Error("Health check failed", zap.Error(err))
+		http.Error(w, "Cant check repo status", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("OK"))
 }

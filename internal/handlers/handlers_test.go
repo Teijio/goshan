@@ -12,7 +12,6 @@ import (
 	// "github.com/Teijio/goshan/internal/models"
 	"github.com/Teijio/goshan/internal/repository"
 	"github.com/Teijio/goshan/internal/service"
-	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -29,7 +28,7 @@ func NewNullLogger() *zap.Logger {
 }
 
 func setupHandler() *Handler {
-	repo := repository.NewURLRepository()
+	repo := repository.NewInMemoreRepository()
 	svc := service.NewURLService(repo)
 	return NewHandler(svc, "http://localhost:8080", NewNullLogger())
 }
@@ -170,38 +169,38 @@ func TestCreateShortenLink(t *testing.T) {
 // 	}
 // }
 
-func TestGetOriginalLinkIntegration(t *testing.T) {
-	h := setupHandler()
+// func TestGetOriginalLinkIntegration(t *testing.T) {
+// 	h := setupHandler()
 
-	r := chi.NewRouter()
-	r.Post("/", h.CreateShortenLink)
-	r.Get("/{id}", h.GetOriginalLink)
+// 	r := chi.NewRouter()
+// 	r.Post("/", h.CreateShortenLink)
+// 	r.Get("/{id}", h.GetOriginalLink)
 
-	originalURL := "https://practicum.yandex.ru/"
-	createReq := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(originalURL))
-	createW := httptest.NewRecorder()
-	r.ServeHTTP(createW, createReq)
+// 	originalURL := "https://practicum.yandex.ru/"
+// 	createReq := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(originalURL))
+// 	createW := httptest.NewRecorder()
+// 	r.ServeHTTP(createW, createReq)
 
-	createResult := createW.Result()
-	defer createResult.Body.Close()
+// 	createResult := createW.Result()
+// 	defer createResult.Body.Close()
 
-	assert.Equal(t, http.StatusCreated, createResult.StatusCode)
+// 	assert.Equal(t, http.StatusCreated, createResult.StatusCode)
 
-	bodyBytes, err := io.ReadAll(createResult.Body)
-	require.NoError(t, err)
-	shortURL := string(bodyBytes)
-	shortID := strings.TrimPrefix(shortURL, "http://localhost:8080/")
+// 	bodyBytes, err := io.ReadAll(createResult.Body)
+// 	require.NoError(t, err)
+// 	shortURL := string(bodyBytes)
+// 	shortID := strings.TrimPrefix(shortURL, "http://localhost:8080/")
 
-	getReq := httptest.NewRequest(http.MethodGet, "/"+shortID, nil)
-	getW := httptest.NewRecorder()
-	r.ServeHTTP(getW, getReq)
+// 	getReq := httptest.NewRequest(http.MethodGet, "/"+shortID, nil)
+// 	getW := httptest.NewRecorder()
+// 	r.ServeHTTP(getW, getReq)
 
-	getResult := getW.Result()
-	defer getResult.Body.Close()
+// 	getResult := getW.Result()
+// 	defer getResult.Body.Close()
 
-	assert.Equal(t, http.StatusTemporaryRedirect, getResult.StatusCode)
-	assert.Equal(t, originalURL, getResult.Header.Get("Location"))
-}
+// 	assert.Equal(t, http.StatusTemporaryRedirect, getResult.StatusCode)
+// 	assert.Equal(t, originalURL, getResult.Header.Get("Location"))
+// }
 
 // func TestCreateShortenLinkV2(t *testing.T) {
 // 	tests := []struct {

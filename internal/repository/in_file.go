@@ -8,8 +8,6 @@ import (
 	"github.com/Teijio/goshan/internal/models"
 )
 
-// {"uuid":"1","short_url":"4rSPg8ap","original_url":"http://yandex.ru"}
-
 type FileRepository struct {
 	file    *os.File
 	encoder *json.Encoder
@@ -33,19 +31,6 @@ func NewFileRepository(filePath string) (*FileRepository, error) {
 func (fr *FileRepository) Save(short, original string) error {
 	fr.mu.Lock()
 	defer fr.mu.Unlock()
-	// existing, err := fr.GetHelper(short)
-	// if err != nil {
-	// 	if err == ErrShortURLNotFound {
-	// 		fmt.Println("Запись не найдена, сохраняем новую")
-	// 	} else {
-	// 		fmt.Println("Реальная ошибка:", err)
-	// 		return err
-	// 	}
-	// }
-	// if existing != "" {
-	// 	fmt.Println("Запись уже существует, пропускаем")
-	// 	return nil
-	// }
 	shortURL := models.ShortURL{
 		OriginalURL: original,
 		ID:          short,
@@ -117,3 +102,9 @@ func (fr *FileRepository) CloseFile() error {
 	}
 	return nil
 }
+
+func (fr *FileRepository) Check() error {
+	_, err := fr.file.Stat()
+	return err
+}
+
