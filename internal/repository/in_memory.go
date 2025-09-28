@@ -3,23 +3,25 @@ package repository
 import (
 	"errors"
 	"sync"
+
+	"github.com/Teijio/goshan/internal/models"
 )
 
 type InMemoreRepository struct {
-	store map[string]string
+	store map[string]models.ShortURL
 	mutex sync.RWMutex
 }
 
 func NewInMemoreRepository() *InMemoreRepository {
 	return &InMemoreRepository{
-		store: make(map[string]string),
+		store: make(map[string]models.ShortURL),
 		mutex: sync.RWMutex{},
 	}
 }
 
-func (r *InMemoreRepository) Save(short, original string) error {
+func (r *InMemoreRepository) Save(shortURL models.ShortURL) error {
 	r.mutex.RLock()
-	_, ok := r.store[short]
+	_, ok := r.store[shortURL.ID]
 	r.mutex.RUnlock()
 
 	if ok {
@@ -27,18 +29,18 @@ func (r *InMemoreRepository) Save(short, original string) error {
 	}
 
 	r.mutex.Lock()
-	r.store[short] = original
+	r.store[shortURL.ID] = shortURL
 	r.mutex.Unlock()
 	return nil
 }
 
-func (r *InMemoreRepository) Get(short string) (string, error) {
+func (r *InMemoreRepository) Get(short string) (models.ShortURL, error) {
 	r.mutex.RLock()
 	original, ok := r.store[short]
 	r.mutex.RUnlock()
 
 	if !ok {
-		return "", errors.New("can't find full url by id")
+		return models.ShortURL{}, errors.New("can't find full url by id")
 	}
 
 	return original, nil

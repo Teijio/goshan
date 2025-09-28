@@ -11,7 +11,7 @@ func main() {
 	cfg := config.LoadConfig()
 
 	rep := repository.GetRepository(cfg)
-	service := service.NewURLService(rep)
+	service := service.NewURLService(rep, cfg)
 	srv := server.New(cfg, service)
 
 	srv.Run()
