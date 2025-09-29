@@ -28,13 +28,14 @@ func NewFileRepository(filePath string) (*FileRepository, error) {
 	}, nil
 }
 
-func (fr *FileRepository) Save(short, original string) error {
+func (fr *FileRepository) Save(shortURL models.ShortURL) error {
+	_, err := fr.Get(shortURL.ID)
+	if err != nil {
+		return NewNotUniqueURLError(shortURL, nil)
+	}
+
 	fr.mu.Lock()
 	defer fr.mu.Unlock()
-	shortURL := models.ShortURL{
-		OriginalURL: original,
-		ID:          short,
-	}
 	if err := fr.encoder.Encode(shortURL); err != nil {
 		return err
 	}
@@ -42,13 +43,13 @@ func (fr *FileRepository) Save(short, original string) error {
 	return fr.file.Sync()
 }
 
-func (fr *FileRepository) Get(short string) (string, error) {
+func (fr *FileRepository) Get(short string) (models.ShortURL, error) {
 	fr.mu.RLock()
 	defer fr.mu.RUnlock()
 
 	_, err := fr.file.Seek(0, 0)
 	if err != nil {
-		return "", err
+		return models.ShortURL{}, err
 	}
 	var shortURL models.ShortURL
 	for {
@@ -57,42 +58,13 @@ func (fr *FileRepository) Get(short string) (string, error) {
 			if err.Error() == "EOF" {
 				break
 			}
-			return "", err
+			return models.ShortURL{}, err
 		}
 		if short == shortURL.ID {
-			return shortURL.OriginalURL, nil
+			return shortURL, nil
 		}
 	}
-	return "", ErrShortURLNotFound
-}
-
-func (fr *FileRepository) GetHelper(short string) (string, error) {
-	currentPos, err := fr.file.Seek(0, 1)
-	if err != nil {
-		return "", err
-	}
-	defer fr.file.Seek(currentPos, 0)
-
-	if _, err := fr.file.Seek(0, 0); err != nil {
-		return "", err
-	}
-	for {
-		var shortURL models.ShortURL
-		err := fr.decoder.Decode(&shortURL)
-		if err != nil {
-			if err.Error() == "EOF" {
-				break
-			}
-			return "", err
-		}
-
-		if shortURL.ID == short {
-			return shortURL.OriginalURL, nil
-		}
-	}
-
-	return "", ErrShortURLNotFound
-
+	return models.ShortURL{}, ErrShortURLNotFound
 }
 
 func (fr *FileRepository) CloseFile() error {
@@ -107,4 +79,3 @@ func (fr *FileRepository) Check() error {
 	_, err := fr.file.Stat()
 	return err
 }
-

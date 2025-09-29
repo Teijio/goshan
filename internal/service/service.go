@@ -2,33 +2,71 @@ package service
 
 import (
 	"crypto/sha1"
+	"errors"
 	"fmt"
 
+	"github.com/Teijio/goshan/internal/config"
+	"github.com/Teijio/goshan/internal/models"
 	"github.com/Teijio/goshan/internal/repository"
 )
 
 type URLService struct {
-	repo repository.Repository
+	repo   repository.Repository
+	config *config.Config
 }
 
-func NewURLService(repo repository.Repository) *URLService {
+type shorteningError struct {
+	Err      error
+	ShortURL models.ShortURL
+}
+
+func (err *shorteningError) Error() string {
+	return fmt.Sprintf("error while shortening: %v", err.Err)
+}
+
+func (err *shorteningError) Unwrap() error {
+	return err.Err
+}
+
+func (s *URLService) FormatShorlURL(urlID string) string {
+	return fmt.Sprintf("%s/%s", s.config.BaseURL, urlID)
+}
+
+func NewShorteningError(shortURL models.ShortURL, err error) error {
+	return &shorteningError{
+		Err:      err,
+		ShortURL: shortURL,
+	}
+}
+
+func NewURLService(repo repository.Repository, config *config.Config) *URLService {
 	return &URLService{
-		repo: repo,
+		repo:   repo,
+		config: config,
 	}
 }
 
-func (s *URLService) Shorten(original string) (string, error) {
+func (s *URLService) Shorten(original string) (models.ShortURL, error) {
 	short := fmt.Sprintf("%x", sha1.Sum([]byte(original)))[:6]
-	if err := s.repo.Save(short, original); err != nil {
-		return "", err
+	shortURL := models.ShortURL{
+		OriginalURL: original,
+		ID:          short,
 	}
-	return short, nil
+	err := s.repo.Save(shortURL)
+	var notUniqueErr *repository.NotUniqueURLError
+	if errors.As(err, &notUniqueErr) {
+		return shortURL, NewShorteningError(shortURL, err)
+	}
+	if err != nil {
+		return models.ShortURL{}, err
+	}
+	return shortURL, nil
 }
 
-func (s *URLService) GetOriginalLink(shorten string) (string, error) {
+func (s *URLService) GetOriginalLink(shorten string) (models.ShortURL, error) {
 	original, err := s.repo.Get(shorten)
 	if err != nil {
-		return "", err
+		return models.ShortURL{}, err
 	}
 	return original, nil
 }
