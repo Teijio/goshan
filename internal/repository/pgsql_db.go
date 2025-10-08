@@ -85,3 +85,15 @@ func (pr *PostgresRepository) Save(shortURL models.ShortURL) error {
 	}
 	return err
 }
+
+func (pr *PostgresRepository) SaveBatch(batch []models.ShortURL) error {
+	_, err := pr.conn.CopyFrom(
+		context.Background(),
+		pgx.Identifier{"urls"},
+		[]string{"original_url", "id", "created_by", "correlation_id"},
+		pgx.CopyFromSlice(len(batch), func(i int) ([]any, error) {
+			return []any{batch[i].OriginalURL, batch[i].ID, batch[i].CreatedByID, batch[i].CorrelationID}, nil
+		}),
+	)
+	return err
+}

@@ -11,6 +11,7 @@ type Repository interface {
 	Save(shortURL models.ShortURL) error
 	Get(short string) (models.ShortURL, error)
 	Check() error
+	SaveBatch(batch []models.ShortURL) error
 }
 
 func GetRepository(cfg *config.Config) Repository {

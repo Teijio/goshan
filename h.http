@@ -25,9 +25,38 @@ Accept-Encoding: gzip
 
 ###
 
-POST / HTTP/1.1
+POST /api/shorten/batch HTTP/1.1
 Host: localhost:8080
+Content-Type: application/json
 Accept-Encoding: gzip
-Content-Encoding: gzip
-Content-Type: text/plain
+
+
+[
+  {
+      "correlation_id": "perviy",
+      "original_url": "http://yandex.ru"
+  },
+  {
+      "correlation_id": "vtoroi",
+      "original_url": "http://google.com"
+  }
+]
+###
+
+POST /api/shorten/batch HTTP/1.1
+Host: localhost:8080
+Accept: application/json
+Content-Type: application/json
 User-Agent: go-resty/2.7.0 (https://github.com/go-resty/resty)
+
+Тело запроса:
+
+[
+  {
+    "correlation_id":"82368798-54da-420e-b81c-c59ebd0a8e6e",
+    "original_url":"http://viaah4dtpj.yandex"},
+  {
+    "correlation_id":"ada9f403-e65d-4f16-9ea2-6062662a6124",
+    "original_url":"http://remrae.net/rrur0od0nl/jk1jgjaifz"
+  }
+]

@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -22,10 +23,11 @@ func NewRouter(service *service.URLService, cfg *config.Config, logger *zap.Logg
 	r := chi.NewRouter()
 	r.Use(middleware.LoggingMiddleware(logger), middleware.ResponseCompressor, middleware.RequestDecompressor)
 	r.Route("/", func(r chi.Router) {
-		r.Post("/", h.CreateShortenLink)
 		r.Get("/{id}", h.GetOriginalLink)
-		r.Post("/api/shorten", h.CreateShortenLinkV2)
 		r.Get("/ping", h.Ping)
+		r.Post("/", h.CreateShortenLink)
+		r.Post("/api/shorten", h.CreateShortenLinkV2)
+		r.Post("/api/shorten/batch", h.CreateShortenLinks)
 	})
 	return r
 }
@@ -121,14 +123,64 @@ func (h *Handler) CreateShortenLinkV2(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	fmt.Println()
 	writeShortenResultAPI(w, h, shortURL, http.StatusCreated)
+}
+
+func (h *Handler) CreateShortenLinks(w http.ResponseWriter, r *http.Request) {
+	type request struct {
+		CorrelationID string `json:"correlation_id"`
+		OriginalURL   string `json:"original_url"`
+	}
+	var input []request
+
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		http.Error(w, "cannot decode json", http.StatusBadRequest)
+		return
+	}
+
+	batch := make([]models.ShortURL, len(input))
+	for i, shortURLInput := range input {
+		if shortURLInput.OriginalURL == "" {
+			http.Error(w, "url required", http.StatusBadRequest)
+			return
+		}
+		batch[i] = models.ShortURL{
+			OriginalURL:   shortURLInput.OriginalURL,
+			CorrelationID: shortURLInput.CorrelationID,
+			CreatedByID: "hipa",
+		}
+	}
+	shortURLBatch, err := h.urlService.ShortenBatch(batch)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	type response struct {
+		CorrelationID string `json:"correlation_id"`
+		ShortURL      string `json:"short_url"`
+	}
+	var resp []response
+	for _, shortURL := range shortURLBatch {
+		resp = append(resp, response{CorrelationID: shortURL.CorrelationID, ShortURL: h.urlService.FormatShorlURL(shortURL.ID)})
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		h.logger.Error("Error encoding response", zap.Error(err))
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+	// writeShortenResultAPI(w, h, resp, http.StatusCreated)
+
 }
 
 func writeShortenResultAPI(w http.ResponseWriter, h *Handler, shortURL models.ShortURL, status int) {
 	response := models.Response{Result: h.urlService.FormatShorlURL(shortURL.ID)}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(status)
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		h.logger.Error("Error encoding response", zap.Error(err))
