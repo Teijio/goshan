@@ -1,6 +1,0 @@
-CREATE TABLE urls(
-"url" TEXT,
-"id" TEXT,
-"created_at" TEXT,
-"correlation_id" TEXT,
-);

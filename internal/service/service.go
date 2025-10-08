@@ -77,3 +77,14 @@ func (s *URLService) HealthCheck() error {
 	}
 	return nil
 }
+
+func (s *URLService) ShortenBatch(batch []models.ShortURL) ([]models.ShortURL, error) {
+	for i, URL := range batch{
+		short := fmt.Sprintf("%x", sha1.Sum([]byte(URL.OriginalURL)))[:6]
+		batch[i].ID = short
+	}
+	if err := s.repo.SaveBatch(batch); err != nil {
+		return nil, err
+	}
+	return batch, nil
+}

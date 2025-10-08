@@ -79,3 +79,20 @@ func (fr *FileRepository) Check() error {
 	_, err := fr.file.Stat()
 	return err
 }
+
+func (fr *FileRepository) SaveBatch(batch []models.ShortURL) error {
+	for _, shortURL := range batch {
+		_, err := fr.Get(shortURL.ID)
+		if err != nil {
+			return NewNotUniqueURLError(shortURL, err)
+		}
+	}
+	fr.mu.Lock()
+	defer fr.mu.Unlock()
+	for _, shortURL := range batch {
+		if err := fr.encoder.Encode(shortURL); err != nil {
+			return err
+		}
+	}
+	return nil
+}
