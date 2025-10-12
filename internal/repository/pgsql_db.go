@@ -6,10 +6,9 @@ import (
 	"fmt"
 
 	"github.com/Teijio/goshan/internal/models"
+	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/jackc/pgerrcode"
-
 )
 
 type PostgresRepository struct {
@@ -67,10 +66,6 @@ func (pr *PostgresRepository) Get(short string) (models.ShortURL, error) {
 	return shortURL, err
 }
 func (pr *PostgresRepository) Save(shortURL models.ShortURL) error {
-	// FIXME
-	// FIXME HARD
-	// FIXME HARDCODE
-	shortURL.CreatedByID = "jopa"
 	_, err := pr.conn.Exec(
 		context.Background(),
 		"INSERT INTO urls (original_url, id, created_by) values ($1, $2, $3)",
@@ -96,4 +91,32 @@ func (pr *PostgresRepository) SaveBatch(batch []models.ShortURL) error {
 		}),
 	)
 	return err
+}
+
+func (pr *PostgresRepository) GetUsersUrls(userID string) ([]models.ShortURL, error) {
+	var URLs []models.ShortURL
+
+	rows, err := pr.conn.Query(
+		context.Background(),
+		"select original_url, id, created_by from urls where created_by=$1",
+		userID)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var entry models.ShortURL
+		if err = rows.Scan(&entry); err != nil {
+			return nil, err
+		}
+		URLs = append(URLs, entry)
+	}
+
+	if rows.Err() != nil {
+		return nil, rows.Err()
+	}
+
+	return URLs, nil
+
 }

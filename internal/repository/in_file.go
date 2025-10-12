@@ -96,3 +96,29 @@ func (fr *FileRepository) SaveBatch(batch []models.ShortURL) error {
 	}
 	return nil
 }
+
+func (fr *FileRepository) GetUsersUrls(id string) ([]models.ShortURL, error) {
+	fr.mu.Lock()
+	defer fr.mu.Unlock()
+
+	if _, err := fr.file.Seek(0, 0); err != nil {
+		return nil, err
+	}
+
+	var entry models.ShortURL
+	var URLs []models.ShortURL
+
+	for {
+		err := fr.decoder.Decode(&entry)
+		if err != nil {
+			if err.Error() == "EOF" {
+				break
+			}
+			return URLs, err
+		}
+		if entry.CreatedByID == id {
+			URLs = append(URLs, entry)
+		}
+	}
+	return URLs, nil
+}

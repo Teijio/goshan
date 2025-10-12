@@ -12,6 +12,7 @@ type Repository interface {
 	Get(short string) (models.ShortURL, error)
 	Check() error
 	SaveBatch(batch []models.ShortURL) error
+	GetUsersUrls(id string) ([]models.ShortURL, error)
 }
 
 func GetRepository(cfg *config.Config) Repository {
@@ -34,6 +35,7 @@ func GetRepository(cfg *config.Config) Repository {
 }
 
 var ErrShortURLNotFound = errors.New("short URL not found")
+var ErrURLNotFoundByID = errors.New("can't find full url by id")
 
 
 type NotUniqueURLError struct {
