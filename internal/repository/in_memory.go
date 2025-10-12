@@ -66,3 +66,15 @@ func (r *InMemoreRepository) SaveBatch(batch []models.ShortURL) error {
 	}
 	return nil
 }
+
+func (r *InMemoreRepository) GetUsersUrls(id string) ([]models.ShortURL, error) {
+	r.mutex.RLock()
+	var URLs []models.ShortURL
+	for _, URL := range r.store {
+		if URL.CreatedByID == id {
+			URLs = append(URLs, URL)
+		}
+	}
+	r.mutex.RUnlock()
+	return URLs, nil
+}

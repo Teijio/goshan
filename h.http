@@ -12,6 +12,11 @@ Host: localhost:8080
 Content-Type: text/plain
 
 ###
+GET /api/user/urls HTTP/1.1
+Host: localhost:8080
+Content-Type: text/plain
+
+###
 
 POST /api/shorten HTTP/1.1
 Host: localhost:8080

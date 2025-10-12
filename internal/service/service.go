@@ -46,11 +46,12 @@ func NewURLService(repo repository.Repository, config *config.Config) *URLServic
 	}
 }
 
-func (s *URLService) Shorten(original string) (models.ShortURL, error) {
+func (s *URLService) Shorten(original string, userID string) (models.ShortURL, error) {
 	short := fmt.Sprintf("%x", sha1.Sum([]byte(original)))[:6]
 	shortURL := models.ShortURL{
 		OriginalURL: original,
 		ID:          short,
+		CreatedByID: userID,
 	}
 	err := s.repo.Save(shortURL)
 	var notUniqueErr *repository.NotUniqueURLError
@@ -71,6 +72,10 @@ func (s *URLService) GetOriginalLink(shorten string) (models.ShortURL, error) {
 	return original, nil
 }
 
+
+func (s *URLService) GetUrlsCreatedBy(userID string) ([]models.ShortURL, error) {
+	return s.repo.GetUsersUrls(userID)
+}
 func (s *URLService) HealthCheck() error {
 	if err := s.repo.Check(); err != nil {
 		return err
@@ -78,13 +83,19 @@ func (s *URLService) HealthCheck() error {
 	return nil
 }
 
-func (s *URLService) ShortenBatch(batch []models.ShortURL) ([]models.ShortURL, error) {
+func (s *URLService) ShortenBatch(batch []models.ShortURL, userID string) ([]models.ShortURL, error) {
 	for i, URL := range batch{
 		short := fmt.Sprintf("%x", sha1.Sum([]byte(URL.OriginalURL)))[:6]
 		batch[i].ID = short
+		batch[i].CreatedByID = userID
 	}
 	if err := s.repo.SaveBatch(batch); err != nil {
 		return nil, err
 	}
 	return batch, nil
+}
+
+
+func (s *URLService) FormatShortURL(urlID string) string {
+	return fmt.Sprintf("%s/%s", s.config.BaseURL, urlID)
 }
