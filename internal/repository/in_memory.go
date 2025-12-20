@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"sync"
 
 	"github.com/Teijio/goshan/internal/models"
@@ -77,4 +78,8 @@ func (r *InMemoreRepository) GetUsersUrls(id string) ([]models.ShortURL, error) 
 	}
 	r.mutex.RUnlock()
 	return URLs, nil
+}
+
+func (r *InMemoreRepository) DeleteUrls(ctx context.Context, ids []models.ShortURL) error {
+	return nil
 }

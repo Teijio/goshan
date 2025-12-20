@@ -35,7 +35,7 @@ func LoadConfig() *Config {
 	flag.StringVar(&cfg.ServerAddress, "a", "localhost:8080", "HTTP server address")
 	flag.StringVar(&cfg.BaseURL, "b", "http://localhost:8080", "Base URL for short links")
 	flag.StringVar(&cfg.FilePath, "f", "", "File to restore DB")
-	flag.StringVar(&cfg.DatabaseDSN, "d", "", "database dsn for connecting to postgres")
+	flag.StringVar(&cfg.DatabaseDSN, "d", "host=localhost user=prac password=prac dbname=prac sslmode=disable", "database dsn for connecting to postgres")
 	flag.Parse()
 	// Приоритет у .env перемененных, т.е. если выше нашлись с флагом - ниже строка перезатрет их
 	env.Parse(&cfg)

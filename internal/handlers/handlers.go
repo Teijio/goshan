@@ -1,13 +1,16 @@
 package handlers
 
 import (
+	"context"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/Teijio/goshan/internal/config"
 	"github.com/Teijio/goshan/internal/middleware"
@@ -34,6 +37,7 @@ func NewRouter(service *service.URLService, cfg *config.Config, logger *zap.Logg
 		r.Post("/", h.CreateShortenLink)
 		r.Post("/api/shorten", h.CreateShortenLinkV2)
 		r.Post("/api/shorten/batch", h.CreateShortenLinks)
+		r.Delete("/api/user/urls", h.DeleteShortenLinks)
 	})
 	return r
 }
@@ -106,7 +110,12 @@ func (h *Handler) GetOriginalLink(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	fmt.Printf("shortURL: %+v\n", shortURL)
 
+	if shortURL.IsDeleted != nil && !shortURL.IsDeleted.IsZero() {
+		http.Error(w, "url is deleted", http.StatusGone)
+		return
+	}
 	w.Header().Set("Content-Type", "text/html")
 	http.Redirect(w, r, shortURL.OriginalURL, http.StatusTemporaryRedirect)
 }
@@ -301,4 +310,26 @@ func (h *Handler) UserURLs(w http.ResponseWriter, r *http.Request) {
 	if _, err = w.Write(out); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+}
+
+// ["6qxTVvsy", "RTfd56hn", "Jlfd67ds"]
+func (h *Handler) DeleteShortenLinks(w http.ResponseWriter, r *http.Request) {
+	var ids []string
+
+	if err := json.NewDecoder(r.Body).Decode(&ids); err != nil {
+		http.Error(w, "cannot decode json", http.StatusBadRequest)
+		return
+	}
+
+	userID := h.getUserID(r)
+
+    go func() {
+        ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+        defer cancel()
+
+        h.urlService.DeleteUrls(ctx, ids, userID)
+    }()
+
+
+	w.WriteHeader(http.StatusAccepted)
 }

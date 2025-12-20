@@ -1,9 +1,12 @@
 package service
 
 import (
+	"context"
 	"crypto/sha1"
 	"errors"
 	"fmt"
+	"runtime"
+	"sync"
 
 	"github.com/Teijio/goshan/internal/config"
 	"github.com/Teijio/goshan/internal/models"
@@ -72,7 +75,6 @@ func (s *URLService) GetOriginalLink(shorten string) (models.ShortURL, error) {
 	return original, nil
 }
 
-
 func (s *URLService) GetUrlsCreatedBy(userID string) ([]models.ShortURL, error) {
 	return s.repo.GetUsersUrls(userID)
 }
@@ -84,7 +86,7 @@ func (s *URLService) HealthCheck() error {
 }
 
 func (s *URLService) ShortenBatch(batch []models.ShortURL, userID string) ([]models.ShortURL, error) {
-	for i, URL := range batch{
+	for i, URL := range batch {
 		short := fmt.Sprintf("%x", sha1.Sum([]byte(URL.OriginalURL)))[:6]
 		batch[i].ID = short
 		batch[i].CreatedByID = userID
@@ -95,7 +97,61 @@ func (s *URLService) ShortenBatch(batch []models.ShortURL, userID string) ([]mod
 	return batch, nil
 }
 
-
 func (s *URLService) FormatShortURL(urlID string) string {
 	return fmt.Sprintf("%s/%s", s.config.BaseURL, urlID)
+}
+
+func (s *URLService) DeleteUrls(ctx context.Context, ids []string, userID string) {
+	if len(ids) == 0 {
+		return
+	}
+
+	workersCount := runtime.NumCPU()
+	inputCh := make(chan string, 128)
+	outputCh := make(chan models.ShortURL, len(ids))
+	wg := &sync.WaitGroup{}
+
+	go func() {
+		defer close(inputCh)
+		for _, id := range ids {
+			select {
+			case <-ctx.Done():
+				return
+			case inputCh <- id:
+			}
+		}
+	}()
+
+	for range workersCount {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for id := range inputCh {
+				select {
+				case <-ctx.Done():
+					return
+				default:
+					outputCh <- models.ShortURL{
+						ID:          id,
+						CreatedByID: userID,
+					}
+				}
+			}
+		}()
+	}
+
+	go func() {
+		wg.Wait()
+		close(outputCh)
+	}()
+
+	urlsToDelete := make([]models.ShortURL, 0, len(ids))
+	for u := range outputCh {
+		urlsToDelete = append(urlsToDelete, u)
+	}
+
+	err := s.repo.DeleteUrls(ctx, urlsToDelete)
+	if err != nil {
+		fmt.Printf("couldn't delete urls: %v\n", err)
+	}
 }

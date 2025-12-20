@@ -3,11 +3,16 @@ Host: localhost:8080
 Content-Type: text/plain
 Accept-Encoding: gzip
 
-https://practicum.yandex.ru/
+https://waka.ru
+###
+DELETE /api/user/urls HTTP/1.1
+Host: localhost:8080
+Content-Type: application/json
 
+["53ae9f", "ca8d0d"]
 
 ###
-GET /a6499d HTTP/1.1
+GET /ca8d0d HTTP/1.1
 Host: localhost:8080
 Content-Type: text/plain
 
@@ -22,10 +27,10 @@ POST /api/shorten HTTP/1.1
 Host: localhost:8080
 Content-Type: application/json
 Accept-Encoding: gzip
-
+Cookie: shortener-user-id=a4ef7735-fc1c-4de9-b7d3-137c6edcb9f2
 
 {
-  "url": "https://practicum.yandex.ru222"
+  "url": "https://practicum.yandex.r1222"
 }
 
 ###
